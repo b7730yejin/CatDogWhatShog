@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<title>관리자 페이지</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link href="https://cdn.jsdelivr.net/npm/simple-datatables@latest/dist/style.css" rel="stylesheet" />
+<link rel="stylesheet" href="/css/admin.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.js"></script>
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<style>
+body {
+  	font-family: "Lato", sans-serif;
+}
+
+.sidenav {
+  height: 100%;
+  width: 300px;
+  float: left;
+  z-index: 1;
+  background-color: #111;
+  overflow-x: hidden;
+  padding-top: 20px;
+}
+
+.sidenav a {
+  padding: 6px 8px 6px 16px;
+  text-decoration: none;
+  font-size: 25px;
+  color: #818181;
+  display: block;
+}
+
+.sidenav a:hover {
+  color: #f1f1f1;
+}
+
+</style>
+
+
+<script>
+	// bar형 차트 출력하는 함수
+	let now = new Date().getDate();
+	let count = 1;
+	function chart1(result) {
+		// 차트를 출력할 영역을 선택
+		
+		var ctx1 = document.getElementById('chart1').getContext('2d');
+		return new Chart(ctx1, {
+			type : 'doughnut',
+			data : {
+				labels : [ '일반회원', '판매자'],
+				datasets : [ {
+					label : '수익금',
+					data : [result.user, result.admin ],
+					backgroundColor : [ window.chartColors.yn_red, window.chartColors.yn_blue],
+					borderColor : [window.chartColors.red, window.chartColors.blue],
+					borderWidth : 1
+				}]
+			},
+			options : {
+				responsive : true,
+				legend : {
+					position : 'top',
+				},
+				title : {
+					display : true,
+					fontSize : 20,
+					text : '회원 현황'
+				},
+				animation : {
+					animateScale : true,
+					animateRotate : true
+				}
+			}
+		});/*
+		return new Chart(ctx1, {
+			type : 'bar',														// 차트 종류
+			data : {
+							// 열제목
+				datasets : [ {
+					label : '회원',
+					data : [result.user],
+					fill : false,
+					backgroundColor : window.chartColors.yn_red,
+					borderColor : window.chartColors.red,
+					borderWidth : 1
+				},{
+					label : '판매자',
+					data : [result.admin],
+					fill : false,
+					backgroundColor : window.chartColors.yn_blue,
+					borderColor : window.chartColors.blue,
+					borderWidth : 1
+				}]
+			},
+			options : {
+				title : {
+					display : true,
+					fontSize : 20,
+					text : '회원 통계'
+				},
+				scales : {
+					yAxes : [ {
+						ticks : {
+							min : 0,
+							max : 10,
+							stepSize : 1,
+							fontSize : 16,
+							beginAtZero : true
+						},
+						scaleLabel : {
+							display : true,
+							labelString : '(명)',
+							fontSize : 13
+						}
+					} ]
+				}
+			}
+		});*/
+	}
+	
+	function chart2(result) {
+		// 차트를 출력할 영역을 선택
+		
+		var ctx2 = document.getElementById('chart2').getContext('2d');
+
+		return new Chart(ctx2, {
+			type : 'bar',														// 차트 종류
+			data : {
+				datasets : [ {
+					label : '자유게시판',
+					data : [result.free],
+					fill : false,
+					backgroundColor : window.chartColors.yn_red,
+					borderColor : window.chartColors.red,
+					borderWidth : 1
+				},{
+					label : '사진게시판',
+					data : [result.photo],
+					fill : false,
+					backgroundColor : window.chartColors.yn_blue,
+					borderColor : window.chartColors.blue,
+					borderWidth : 1
+				},{
+					label : '질문게시판',
+					data : [result.QnA],
+					fill : false,
+					backgroundColor : window.chartColors.yn_green,
+					borderColor : window.chartColors.green,
+					borderWidth : 1
+				}]
+			},
+			options : {
+				title : {
+					display : true,
+					fontSize : 20,
+					text : '게시글 통계'
+				},
+				scales : {
+					yAxes : [ {
+						ticks : {
+							min : 0,
+							max : 30,
+							stepSize : 5,
+							fontSize : 16,
+							beginAtZero : true
+						},
+						scaleLabel : {
+							display : true,
+							//labelString : '(명)',
+							fontSize : 13
+						}
+					} ]
+				}
+			}
+		});
+	}
+
+	$(function() {
+		// 사용할 컬러 지정. window 객체에 전역 객체로 저장
+		window.chartColors = {
+			red : 'rgb(255, 99, 132)',
+			yn_red : 'rgba(255, 99, 132, 0.7)',
+			//orange : 'rgb(255, 159, 64)',
+			//yellow : 'rgb(255, 205, 86)',
+			green : 'rgb(75, 192, 192)',
+			yn_green : 'rgb(75, 192, 192, 0.7)',
+			blue : 'rgb(54, 162, 235)',
+			yn_blue : 'rgba(54, 162, 235, 0.7)',
+			//purple : 'rgb(153, 102, 255)',
+			//grey : 'rgb(201, 203, 207)'
+		};
+		
+		$.ajax("/api/admin/data1").done(result=>{
+			chart1(result);
+			//chart2(result);
+		});
+		$.ajax("/api/admin/data2").done(result=>{
+			chart2(result);
+		});
+
+
+	});
+</script>
+
+</head>
+<body style="min-width: 1700px">
+	<div class="sidenav">
+  		<a href="/admin/index">HOME</a>
+  		<a href="/boardMain">BOARD</a>
+  		<a href="/">SHOP</a>
+  		<a href="#" id="logout">LOGOUT</a>
+	</div>
+	<div id="page" style="float: right; width: 1388px; padding: 20px; ">
+		
+		<div id="main" >
+			
+			<section id="section">
+				<h1 style="text-align: center; margin-bottom: 60px;">관리자 페이지입니다</h1>
+				
+				<div class="row" style="margin-bottom: 60px;">
+					<div class="col-xl-3 col-md-6">
+						<div class="card bg-primary text-white mb-4">
+							<div class="card-body">회원관리</div>
+							<div
+								class="card-footer d-flex align-items-center justify-content-between">
+								<a class="small text-white stretched-link" href="/admin/member_report">View Details</a>
+								<div class="small text-white">
+									<i class="fas fa-angle-right"></i>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-xl-3 col-md-6">
+						<div class="card bg-warning text-white mb-4">
+							<div class="card-body">자유게시판 신고글</div>
+							<div
+								class="card-footer d-flex align-items-center justify-content-between">
+								<a class="small text-white stretched-link" href="/admin/fbwarn_report">View Details</a>
+								<div class="small text-white">
+									<i class="fas fa-angle-right"></i>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-xl-3 col-md-6">
+						<div class="card bg-success text-white mb-4">
+							<div class="card-body">판매자 계정 신청 내역</div>
+							<div
+								class="card-footer d-flex align-items-center justify-content-between">
+								<a class="small text-white stretched-link" href="/admin/seller_report">View Details</a>
+								<div class="small text-white">
+									<i class="fas fa-angle-right"></i>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-xl-3 col-md-6">
+						<div class="card bg-danger text-white mb-4">
+							<div class="card-body">공지사항 관리</div>
+							<div
+								class="card-footer d-flex align-items-center justify-content-between">
+								<a class="small text-white stretched-link" href="/noticeBoard/list">View Details</a>
+								<div class="small text-white">
+									<i class="fas fa-angle-right"></i>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+		
+				<div class="container-fluid" >
+					<div class="row" >
+					&nbsp; &nbsp; &nbsp; &nbsp;
+						<div class="col-sm-5 myChart" style="background-color : rgba(201, 203, 207,0.1); border: 2px solid rgb(201, 203, 207); border-radius: 15px; padding: 20px 0; ">
+							<canvas id="chart1"></canvas>
+						</div>
+						&nbsp; &nbsp; &nbsp; &nbsp;
+						<div class="col-sm-6 myChart" style="background-color : rgba(201, 203, 207,0.1); border: 2px solid rgb(201, 203, 207); border-radius: 15px; padding: 20px 0;">
+							<canvas id="chart2"></canvas>
+						</div>
+					</div>
+				</div>
+			</section>
+		</div>
+		<hr style="margin-top: 70px;">
+		<nav id="footer" th:replace="/fragments/footer" ></nav>
+	</div>
+	
+	<script th:inline="javascript">
+		$("#logout").on("click", (e)=> {
+			e.preventDefault();
+			let choice = confirm('로그아웃하시겠습니까?');
+			if(choice==false)
+				return;
+			$.ajax({
+				url:"http://localhost:8081/member/logout",
+				method: "post",
+			}).done(()=>location.href="/");
+			
+		});	
+	</script>
+</body>
+</html>

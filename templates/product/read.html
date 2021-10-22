@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" xmlns:th="http://www.thymeleaf.org"
+	xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<title>Insert title here</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script
+src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="/script/main.js"></script>
+<link rel="stylesheet" href="/css/header.css">
+<link rel="stylesheet" href="/css/main.css">
+<link rel="stylesheet" href="/css/nav.css">
+<!-- main.js 내부에 두면 sec:authorize를 이해못하는 자바스크립트에 의해 무조건 실행되버린다 -->
+<script sec:authorize="isAuthenticated()" src="/script/websocket.js"></script>
+<style>
+	#left {
+		float: left;
+		width: 500px;
+		margin-left: 100px;
+	}
+	#right {
+		float: right;
+		width: 256px;
+		margin-right: 100px;
+	}
+	#section {
+		overflow: hidden;			/* float를 clear하는 방법   */
+	}
+	
+	.count {
+		width: 35px;
+		height: 35px;
+		line-height: 35px;
+		display: inline-block;
+		text-align: center;
+		font-size: 1.25em;
+	}
+	.plus, .minus, #plus, #minus {
+		background-color: #ddd;		/* color를 16진수로 지정. 16진수로 지정할 때 #555555 -> #555로 줄여쓸 수 있다 */
+		cursor: pointer;
+	}
+	
+	#manufacturer, #name {
+		font-size: 1.5em;
+		font-weight: bold;
+		color: #222;
+	}
+	
+	#price {
+		margin-top: 15px;
+		font-size: 24px;
+		color: rgb(107,144,220);	/* color를 10진수로 지정. rgb, rgba 두 가지.*/
+		font-weight: 700;
+		text-align: right;
+	}
+	
+	#total_price {
+		font-size: 1.75em;			/* em은 퍼센트(175%). %는 문서 원래 크기 기준. em은 부모 기준.*/ 
+		font-weight: bold;
+		color:rgb(233,96,97);
+	}
+	
+	#buy, #add_to_cart {
+		width: 125px;
+		height: 50px;
+		line-height: 50px;
+		text-align: center;
+		color: white;
+		font-weight: bold;
+		
+		/* 버튼을 커스터마이즈할 때 외곽선 */
+		border: 0;
+		outline: 0;
+	}
+	
+	#buy {
+		background-color: #3fc910;
+	}
+	
+	#add_to_cart {
+		background-color: #565656;
+	}
+	
+	  ul.list {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+	border-bottom: 1px solid #ccc;
+  }
+  ul.list::after {
+	content: '';
+	display: block;
+	clear: both;
+  }
+  .tab-button {
+	display: block;
+	padding: 10px 20px 10px 20px;
+	float: left;
+	margin-right: -1px;
+	margin-bottom: -1px;
+	color: grey;
+	text-decoration: none;
+	cursor: pointer;
+  }
+  .active {
+	border-top: 2px solid orange;
+	border-right: 1px solid #ccc;
+	border-bottom: 1px solid white;
+	border-left: 1px solid #ccc;
+	color: black;
+	margin-top: -2px;
+  }
+  .tab-content {
+	display: none;
+	padding: 10px;
+  }
+  .show {
+	display: block;
+  }
+	
+ .mt-5 {
+  height: 400px;
+ }
+</style>
+<script>
+	
+	let product = undefined;
+	let _this = undefined;
+	
+	/* const token = $("meta[name='_csrf']").attr("content");
+	const header = $("meta[name='_csrf_header']").attr("content"); */
+	
+	// 현재 화면을 담는 장바구니 1개
+	const cart = {
+		init: function() {
+			this.pno = product.pno;
+			this.name = product.name;
+			this.manufacturer = product.manufacturer;
+			this.price = product.price;
+			this.count = 1;
+			this.image = product.imageFileName;
+			this.cartPrice = this.price * this.count;
+		},
+		
+		// 장바구니에 담은 상품 개수 증가, 감소
+		increase() {
+			this.count++;
+			this.cartPrice = this.count * product.price;
+		},
+		decrease() {
+			this.count--;
+			this.cartPrice = this.count * product.price;
+		}
+	};
+	
+	const main = {
+			init: function() {
+				$("#inc").on("click", this.incProduct);
+				$("#dec").on("click", this.decProduct);
+				window._this = this;
+				$("#add_to_cart").on("click", this.addToCart);
+				$("#buy").on("click", this.buy);
+				
+				const pno = location.search.substr(5);
+				$.ajax("/products/" + pno).done(result=>{
+					product = result;
+					this.printPage();
+				});
+			},
+			
+			// 개수와 총 가격을 출력하는 일이 여러번이라 메서드로 분리
+			printTotalCountAndPrice: function() {
+				$("#total_price").text(cart.cartPrice);
+				$("#total_count").text(cart.count);
+			}, 
+			
+			printPage: function() {
+				$("#image").attr("src", "/upload/productimage/" + product.imageFileName);
+				$("#manufacturer").text(product.manufacturer);
+				$("#name").text(product.name);
+				$("#price span").text(product.price);
+				
+				// 상품 페이지로 들어오면 1개의 상품을 담은 장바구니 객체를 생성
+				cart.init();	
+				$("#count").text(cart.count);
+				this.printTotalCountAndPrice();
+			},
+			
+			// 옵션이 있는 경우 상품 개수 증가/감소
+			incProduct: function() {
+				let number = $("#count").text();
+				const param = {pno:product.pno, count:++number};
+				$.ajax({url:"/products/stock", data:param}).done(count=>{
+					cart.increase();
+					$("#count").text(cart.count);
+					window._this.printTotalCountAndPrice()
+				}).fail(result=>alert(result.responseText));
+			},
+			decProduct: function() {
+				let number = $("#count").text();
+				if(number>1) {
+					cart.decrease();
+					$("#count").text(cart.count);
+					window._this.printTotalCountAndPrice()
+				}
+			},
+			
+			addToCart: function() {
+				$.ajax({
+					url:"/carts",
+					method:"post",
+					data: JSON.stringify(cart),
+					contentType: "application/json",
+					/* beforeSend: function(xhr) {
+						xhr.setRequestHeader(header, token)
+					} */
+				}).done(
+					Swal.fire({ 
+						title: '장바구니 추가 완료!', 
+						text: "장바구니 화면으로 이동 하시겠습니까?", 
+						icon: 'success', 
+						showCancelButton: true, 
+						confirmButtonColor: '#3085d6', 
+						cancelButtonColor: '#d33', 
+						confirmButtonText: '승인', 
+						cancelButtonText: '취소' 
+					}).then((result) => {
+						if (result.isConfirmed) { // 승인버튼 누르면
+							location.href = "/cart/cart_read";
+						}
+					}),
+				);
+			},
+			
+			buy: function() {
+				const param = {
+					pno: product.pno,
+					count: $("#count").text()
+				}
+				console.log(JSON.stringify(param));
+				$.ajax({
+					url:"/orders/product",
+					method:"post",
+					data: JSON.stringify(param),
+					contentType: "application/json",
+					/* beforeSend: function(xhr) {
+						xhr.setRequestHeader(header, token)
+					} */
+				}).done((result, text, response)=>location.href = response.getResponseHeader('Location'));
+			}
+		};
+	
+	
+	window.onload = function(){
+		main.init();
+	}
+	
+</script>
+
+
+</head>
+<body>
+	<div id="page">
+		<header id="header" th:replace="/fragments/headerStore">
+		</header>
+	<nav id="nav" th:replace="/fragments/navStore">
+	</nav>
+		<div id="main">
+
+			<section id="section">
+				<div id="left">
+					<img id="image" style="width:100%">
+				</div>
+				<div id="right">
+					<div id="manufacturer"></div>
+					<div id="name"></div>
+					<div id="price"><span></span>원</div>
+					
+					<!-- 옵션이 없는 경우 바로 개수 선택 div -->
+					<hr>
+					<div id="product_div">
+						<button class='count' id='dec'>-</button>
+						<div class='count number' id='count'></div>
+						<button class='count' id='inc'>+</button>
+					</div>
+					
+					<!-- 옵션이 있는 경우 화면 -->
+					<div style="display:none;" id="option_div">
+						<select id="options_select" class="form-control">
+						</select>
+					</div>
+					<hr>
+					
+					<!-- select에서 선택한 옵션을 출력하는 부분 -->
+					<div id="selected_options_div">
+					</div>
+						
+					
+					<div id="price_div" style="overflow:hidden;">
+						<span style="font-weight:bold; font-size:1.25em;">총 금액</span>
+						<div style="float:right;">
+							<span style="color:#999">총 수량<span id="total_count"></span>개</span>
+							<span><span id="total_price"></span>원</span>
+						</div>
+					</div>
+					<hr>
+					<div>
+						<button id="buy" sec:authorize="isAuthenticated()">구매하기</button>
+						<button id="add_to_cart" sec:authorize="isAuthenticated()">장바구니</button>
+						<p sec:authorize="isAnonymous()" style="color:blue; font-size: 1.25em;"> 로그인하셔야 주문가능합니다</p>
+					</div>
+				</div>
+			</section>
+			
+        <div class="container mt-5" >
+          <ul class="list">
+            <li class="tab-button" data-id="0">Products</li>
+            <li class="tab-button active" data-id="1">Information</li>
+            <li class="tab-button" data-id="2">Shipping</li>
+          </ul>
+        
+          <div class="tab-content ">
+            <p>상품설명입니다. Product</p>
+          </div>
+          <div class="tab-content">
+            <p>상품정보입니다. Info</p>
+          </div>
+          <div class="tab-content">
+            <p>배송정보입니다. Shipping</p>
+          </div>
+        </div>
+		</div>
+		<footer id="footer" th:replace="/fragments/footer">
+		</footer>
+	</div>
+	<script type="text/javascript">
+$('.list').click(function(e){
+    // if(내가 실제 누른 요소가 버튼 0이면)
+    // 탭0번째 열어주셈
+    // if(e.target == document.querySelectorAll('.tab-button')[0]){
+    //     탭열기(0);
+    // } 
+    openTab(e.target.dataset.id ) 
+});
+
+
+//jQuery 
+$('.list').data('name','val');
+$('.list').data('name')
+
+function openTab (num) {
+    $('.tab-button').removeClass('active');
+    $('.tab-content').removeClass('show');
+    $('.tab-button').eq(num).addClass('active');
+    $('.tab-content').eq(num).addClass('show');
+}
+
+	
+
+</script>
+</body>
+</html>
