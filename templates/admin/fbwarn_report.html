@@ -42,12 +42,15 @@ body {
 </style>
 <script>
 	// 서버 응답을 저장할 변수
-	let page = null;
+	let free_page = null;
+	let photo_page = null;
 	
-	const printBoard = ()=>{
-		const $list = $("#list");
+	////////////////////////////자유게시판 출력////////////////
+	
+	const printFreeBoard = ()=>{
+		const $list = $("#free_list");
 		// 서버가 보낸 board들은 page.content에 저장되어 있다
-		for(c of page.content) {
+		for(c of free_page.content) {
 			let createdTime = c.writeTime.substr(-26,10);
 			const $tr = $("<tr>").appendTo($list);
 			$("<td>").text(c.bno).appendTo($tr);
@@ -63,6 +66,7 @@ body {
 			$("<td>").text(c.goodCnt).appendTo($tr);
 			$("<td>").text(c.badCnt).appendTo($tr);
 			$("<td>").text(c.warnCnt).appendTo($tr);
+			
 			if(c.isActive){
 				$("<td>").text("활성").attr("id", c.bno+"state").css("color", "blue").appendTo($tr);
 				$("<button>").attr("data-bno", c.bno).attr("class","board_active").text("비활성").appendTo($tr);
@@ -74,7 +78,7 @@ body {
 		}
 	};
 	
-	const getPagination = () => {
+	const getFreePagination = () => {
 		// 한번에 다섯개의 페이지씩
 		const blockSize = 5;
 		
@@ -89,7 +93,7 @@ body {
 		const first = prev + 1;
 		let last = first + blockSize - 1;
 		let next = last + 1;
-		const countOfPage = Math.ceil(page.totalcount/10)
+		const countOfPage = Math.ceil(free_page.totalcount/10)
 		if(last>=countOfPage) {
 			last = countOfPage;
 			next = 0;
@@ -100,9 +104,9 @@ body {
 	
 	// 구조 분해 할당 : 객체를 변수로 풀어헤치는 문법
 	// const {pageno, prev, next, first, last} = getPagination();
-	const printPagination = ({pageno, prev, next, first, last}) => {
-		const $pagination = $("ul.pagination");
-		const url = "/board/list?pageno="
+	const printFreePagination = ({pageno, prev, next, first, last}) => {
+		const $pagination = $("#free.pagination");
+		const url = "/admin/fbwarn_report?pageno="
 				
 		// 이전으로 
 		if(prev>0) {
@@ -125,6 +129,7 @@ body {
 		}
 	}
 	
+
 	$(document).ready(()=>{
 		// 주소창에서 페이지 번호를 잘라낸다. 페이지 번호가 없으면 1로
 		let pageno = location.search.substr(8);
@@ -133,12 +138,14 @@ body {
 		
 		console.log(pageno);
 		$.ajax("/board/warnlist?pageno="+pageno).done(result=>{
-			page=result;
-			printBoard();
-			printPagination(getPagination());
+			free_page=result;
+			console.log(free_page);
+			printFreeBoard();
+			printFreePagination(getFreePagination());
 		});
 		
-		$("#list").on("click",".board_active", function() {
+		
+		$("#free_list").on("click",".board_active", function() {
 			
 			const bno = {bno :$(this).attr("data-bno")}
 			
@@ -167,8 +174,8 @@ body {
 		<a href="/admin/index">HOME</a> <a href="/boardMain">BOARD</a> <a
 			href="/">SHOP</a> <a href="#" id="logout">LOGOUT</a>
 	</div>
-	<div id="page" style="float: right; width: 80%">
-		<h3>자유게시판 시고글</h3>
+	<div class="page" style="float: right; width: 80%">
+		<h3>자유게시판 신고글</h3>
 		<div class="wrap" style="margin: 0 auto;">
 			<table class="table table-hover">
 				<tr>
@@ -183,11 +190,11 @@ body {
 					<th>상태</th>
 					<th></th>
 				</tr>
-				<tbody id="list">
+				<tbody id="free_list">
 				</tbody>
 			</table>
 			<div id="pagination" style="text-align: center;">
-				<ul class="pagination"></ul>
+				<ul id="free" class="pagination"></ul>
 			</div>
 		</div>
 	</div>
