@@ -5,6 +5,7 @@ https://youtu.be/OOMCWLuOclA /
 https://youtu.be/VfqcDV_kDH8 / 
 https://youtu.be/STIc2GLNprg /
 https://youtu.be/bXeqQVgi69w /
-https://youtu.be/tjvKi5j4oBA
+https://youtu.be/tjvKi5j4oBA /
+https://youtu.be/Sg_Hgxv9gK8
 
 SVN 링크 :  https://svn.riouxsvn.com/icia_cdmall/
