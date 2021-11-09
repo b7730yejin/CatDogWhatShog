@@ -130,9 +130,53 @@ public class BoardCustomRepositoryImpl extends QuerydslRepositorySupport impleme
 	@Override
 	public Long countByWarnCnt() {
 		QBoard board = QBoard.board;
-		return factory.from(board).select(board.bno.count()).where(board.bno.gt(0).and(board.warnCnt.goe(10))).fetchOne();
+		return factory.from(board).select(board.bno.count()).where(board.bno.gt(0).and(board.warnCnt.goe(0))).fetchOne();
 	}
-
+	
+	// 검색
+	@Override
+	public List<BoardDto.List> search(Pageable pageable, String word){
+		BooleanBuilder condition = new BooleanBuilder();
+		condition.and(board.bno.gt(0));
+		if(word!=null) 
+			condition.and(board.title.contains(word).or(board.content.contains(word)).or(board.writer.contains(word)));
+		return factory.from(board).select(Projections.constructor(BoardDto.List.class, board.bno, board.title, board.writer, 
+				board.createTime, board.readCnt, board.attachmentCnt, board.commentCnt, board.goodCnt, board.badCnt, board.category, board.warnCnt))
+				.where(condition).orderBy(board.bno.desc()).offset(pageable.getOffset()).limit(pageable.getPageSize()).fetch();
+		
+	}
+	
+	@Override
+	public Long countSearch(String word) {
+		BooleanBuilder condition = new BooleanBuilder();
+		condition.and(board.bno.gt(0));
+		if(word!=null) 
+			condition.and(board.title.contains(word).or(board.content.contains(word)).or(board.writer.contains(word)));
+		return factory.from(board).select(board.bno.count()).where(condition).fetchOne();
+	}
+	
+	
+	//추천게시판 검색
+	@Override
+	public List<BoardDto.BestList> searchBest(Pageable pageable, String word){
+		BooleanBuilder condition = new BooleanBuilder();
+		condition.and(board.bno.gt(0));
+		if(word!=null) 
+			condition.and(board.title.contains(word).or(board.content.contains(word)).or(board.writer.contains(word)));
+		return factory.from(board).select(Projections.constructor(BoardDto.BestList.class, board.bno, board.title, board.writer, 
+				board.createTime, board.readCnt, board.attachmentCnt, board.commentCnt, board.goodCnt, board.badCnt, board.category, board.warnCnt))
+				.where(condition.and(board.goodCnt.goe(10))).orderBy(board.bno.desc()).offset(pageable.getOffset()).limit(pageable.getPageSize()).fetch();
+	}
+	
+	
+	@Override
+	public Long countSearchBest(String word) {
+		BooleanBuilder condition = new BooleanBuilder();
+		condition.and(board.bno.gt(0));
+		if(word!=null) 
+			condition.and(board.title.contains(word).or(board.content.contains(word)).or(board.writer.contains(word)));
+		return factory.from(board).select(board.bno.count()).where(condition.and(board.goodCnt.goe(10))).fetchOne();
+	}
 }
 
 

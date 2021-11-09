@@ -128,7 +128,6 @@ private final BoardRepository dao;
 	}
 	
 	public Map<String,Object> warnList(Integer pageno, Integer warnCnt){
-		System.out.println("aaaaaaaaaaaaaaaaaaaa");
 		Pageable pageable = PageRequest.of(pageno-1, 10);
 		Map<String,Object> map = new HashMap<>();
 		map.put("content", dao.readWarnAll(pageable, warnCnt));
@@ -210,6 +209,29 @@ private final BoardRepository dao;
 			throw new BoardFail.IllegalJobException();
 		dao.delete(board);
 		return null;
+	}
+	
+	
+	// 검색
+	public Map<String,Object> readSearchAll(Integer pageno,String word){
+		Pageable pageable = PageRequest.of(pageno-1, 10);
+		Map<String,Object> map = new HashMap<>();
+		map.put("content", dao.search(pageable,word));
+		map.put("totalcount", dao.countSearch(word));
+		map.put("pageno", pageno);
+		map.put("pagesize", 10);
+		return map;
+	}
+	
+	//추천게시판 검색
+	public Map<String,Object> searchBestAll(Integer pageno,String word){
+		Pageable pageable = PageRequest.of(pageno-1, 10);
+		Map<String,Object> map = new HashMap<>();
+		map.put("content", dao.searchBest(pageable,word));
+		map.put("totalcount", dao.countSearchBest(word));
+		map.put("pageno", pageno);
+		map.put("pagesize", 10);
+		return map;
 	}
 }
 
